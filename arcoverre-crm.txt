@@ -1,0 +1,102 @@
+-- LEADS TABLE
+create table public.leads (
+  id uuid primary key default gen_random_uuid(),
+  owner_id uuid references auth.users(id) on delete cascade,
+  name text not null,
+  phone text,
+  email text,
+  city text,
+  service text,
+  source text,
+  stage text default 'New Lead',
+  value numeric default 0,
+  next_follow_up date,
+  assigned_contractor text,
+  notes text,
+  created_at timestamptz default now()
+);
+
+-- PROJECTS TABLE
+create table public.projects (
+  id uuid primary key default gen_random_uuid(),
+  owner_id uuid references auth.users(id) on delete cascade,
+  client text not null,
+  project text not null,
+  status text default 'New Project',
+  contractor text,
+  contract numeric default 0,
+  deposit numeric default 0,
+  balance numeric default 0,
+  install_date date,
+  created_at timestamptz default now()
+);
+
+-- ESTIMATES TABLE
+create table public.estimates (
+  id uuid primary key default gen_random_uuid(),
+  owner_id uuid references auth.users(id) on delete cascade,
+  client text not null,
+  service text,
+  status text default 'Draft',
+  total numeric default 0,
+  deposit_required numeric default 0,
+  notes text,
+  created_at timestamptz default now()
+);
+
+-- PAYMENTS TABLE
+create table public.payments (
+  id uuid primary key default gen_random_uuid(),
+  owner_id uuid references auth.users(id) on delete cascade,
+  project_id uuid references public.projects(id) on delete cascade,
+  amount numeric not null,
+  payment_type text default 'Deposit',
+  payment_date date default current_date,
+  notes text,
+  created_at timestamptz default now()
+);
+
+-- CONTRACTORS TABLE
+create table public.contractors (
+  id uuid primary key default gen_random_uuid(),
+  owner_id uuid references auth.users(id) on delete cascade,
+  name text not null,
+  phone text,
+  email text,
+  specialty text,
+  notes text,
+  created_at timestamptz default now()
+);
+
+-- ENABLE SECURITY
+alter table public.leads enable row level security;
+alter table public.projects enable row level security;
+alter table public.estimates enable row level security;
+alter table public.payments enable row level security;
+alter table public.contractors enable row level security;
+
+-- SECURITY POLICIES (VERY IMPORTANT)
+create policy "Users manage their own leads"
+on public.leads for all
+using (auth.uid() = owner_id)
+with check (auth.uid() = owner_id);
+
+create policy "Users manage their own projects"
+on public.projects for all
+using (auth.uid() = owner_id)
+with check (auth.uid() = owner_id);
+
+create policy "Users manage their own estimates"
+on public.estimates for all
+using (auth.uid() = owner_id)
+with check (auth.uid() = owner_id);
+
+create policy "Users manage their own payments"
+on public.payments for all
+using (auth.uid() = owner_id)
+with check (auth.uid() = owner_id);
+
+create policy "Users manage their own contractors"
+on public.contractors for all
+using (auth.uid() = owner_id)
+with check (auth.uid() = owner_id);
